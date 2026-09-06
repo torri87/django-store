@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Items List</title>
+</head>
+<body>
+    <h1>Список товарів</h1>
+    <button id="load-btn">Load items</button>
+    <ul id="items-list"></ul>
+
+    <script>
+        document.getElementById('load-btn').addEventListener('click', () => {
+            fetch('/items/')
+                .then(response => response.json())
+                .then(data => {
+                    const list = document.getElementById('items-list');
+                    list.innerHTML = '';
+                    data.forEach(item => {
+                        const li = document.createElement('li');
+                        li.textContent = `${item.id}: ${item.name}`;
+                        list.appendChild(li);
+                    });
+                });
+        });
+    </script>
+</body>
+</html>
