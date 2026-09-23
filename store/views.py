@@ -1,12 +1,9 @@
-from django.http import JsonResponse
 from .models import Item
 from django.shortcuts import render
-
-def get_items(request):
-    items = Item.objects.all()
-    data = [{"id": i.id, "name": i.name} for i in items]
-    return JsonResponse(data, safe=False)
+from rest_framework import generics
+from .serializers import ItemSerializer
 
 
-def items_page(request):
-    return render(request, 'store/index.html')
+class ItemApiView(generics.ListAPIView):
+    queryset = Item.objects.all()
+    serializer_class = ItemSerializer
