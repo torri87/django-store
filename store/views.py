@@ -1,9 +1,5 @@
-from .models import Item
-from django.shortcuts import render
-from rest_framework import generics
-from .serializers import ItemSerializer
+from django.forms.models import model_to_dict
 
-
-class ItemApiView(generics.ListAPIView):
-    queryset = Item.objects.all()
-    serializer_class = ItemSerializer
+from rest_framework import generics, response
+from rest_framework.response import Response
+from rest_framework.views import APIView
