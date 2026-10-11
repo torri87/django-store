@@ -7,7 +7,7 @@ class ProductApiTest(APITestCase):
     def setUp(self):
         self.category = Category.objects.create(name='Одяг')
         self.visible = Product.objects.create(
-            category=self.category, name='Футболка', price=500.35, stock=11
+            category=self.category, name='Футболка', price=500, stock=11
         )
         self.hidden = Product.objects.create(
             category=self.category, name='Прихований', price=340, is_active=False
@@ -27,3 +27,5 @@ class ProductApiTest(APITestCase):
     def test_detail_visible_and_hidden(self):
         response = self.client.get(f'/api/products/{self.visible.id}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(f'/api/products/{self.hidden.id}/')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
