@@ -14,6 +14,9 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        ordering = ['name']
+
 
 class Product(models.Model):
     category = models.ForeignKey(Category, on_delete=models.PROTECT)
@@ -27,6 +30,9 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ['time_created', 'name']
 
 
 class Order(models.Model):
@@ -47,6 +53,9 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Замовлення: {self.id} від {self.user.username}"
+
+    class Meta:
+        ordering = ['-time_created']
 
 
 class OrderItem(models.Model):
