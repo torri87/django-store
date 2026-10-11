@@ -1,5 +1,13 @@
-from django.forms.models import model_to_dict
+from rest_framework.viewsets import ReadOnlyModelViewSet
+from .models import Product, Category
+from .serializers import ProductSerializer, CategorySerializer
 
-from rest_framework import generics, response
-from rest_framework.response import Response
-from rest_framework.views import APIView
+
+class ProductViewSet(ReadOnlyModelViewSet):
+    queryset = Product.objects.filter(is_active=True)
+    serializer_class = ProductSerializer
+
+
+class CategoryViewSet(ReadOnlyModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
