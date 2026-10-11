@@ -32,7 +32,7 @@ class Product(models.Model):
         return self.name
 
     class Meta:
-        ordering = ['time_created', 'name']
+        ordering = ['-time_created', 'name']
 
 
 class Order(models.Model):
