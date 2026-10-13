@@ -6,6 +6,9 @@ from .serializers import ProductSerializer, CategorySerializer
 class ProductViewSet(ReadOnlyModelViewSet):
     queryset = Product.objects.filter(is_active=True)
     serializer_class = ProductSerializer
+    filterset_fields = ['category']
+    search_fields = ['name']
+    ordering_fields = ['price', 'time_created']
 
 
 class CategoryViewSet(ReadOnlyModelViewSet):
