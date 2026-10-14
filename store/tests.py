@@ -58,18 +58,19 @@ class UserRegisterApiTest(APITestCase):
         self.assertNotIn('password', response.data)
 
     def test_register_double_mail(self):
-        data_2 = {
+        data = {
             'username': 'new_user2',
             'email': 'email@mail.com',
             'password': 'Str0ng_Pas21swo..rd@!!',
         }
-        response = self.client.post('/api/auth/register/', data_2, format='json')
+        response = self.client.post('/api/auth/register/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_register_weak_password(self):
         data = {
             'username': 'new_user2',
-            'password': '123'
+            'password': '123',
+            'email': 'test@mail.com',
         }
         response = self.client.post('/api/auth/register/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
