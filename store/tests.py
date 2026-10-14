@@ -1,6 +1,6 @@
 from rest_framework import status
 from rest_framework.test import APITestCase
-from .models import Category, Product
+from .models import Category, Product, User
 
 
 class ProductApiTest(APITestCase):
@@ -29,3 +29,114 @@ class ProductApiTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         response = self.client.get(f'/api/products/{self.hidden.id}/')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class UserRegisterApiTest(APITestCase):
+    def setUp(self):
+        self.data = {
+            'username': 'double_mail',
+            'email': 'email@mail.com',
+            'password': 'Str0ng_Pas21swo..rd@!',
+        }
+        self.user = User.objects.create_user(**self.data)
+
+    def test_register(self):
+        data = {
+            'username': 'new_user',
+            'email': 'new_user@test.com',
+            'password': 'Str0ng_Pas21swo..rd@!',
+        }
+
+        response = self.client.post('/api/auth/register/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(User.objects.count(), 2)
+
+        user = User.objects.get(username='new_user')
+        self.assertEqual(user.username, 'new_user')
+
+        self.assertNotIn('password', response.data)
+
+    def test_register_double_mail(self):
+        data = {
+            'username': 'new_user2',
+            'email': 'email@mail.com',
+            'password': 'Str0ng_Pas21swo..rd@!!',
+        }
+        response = self.client.post('/api/auth/register/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_register_weak_password(self):
+        data = {
+            'username': 'new_user2',
+            'password': '123',
+            'email': 'test@mail.com',
+        }
+        response = self.client.post('/api/auth/register/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class UserProfileApiTest(APITestCase):
+    def setUp(self):
+        data = {
+            'username': 'new_user',
+            'email': 'new_user@test.com',
+            'password': 'Str0ng_Pas21swo..rd@!',
+        }
+        self.user = User.objects.create_user(**data)
+
+    def test_get_profile_authenticated(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get('/api/auth/me/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['username'], 'new_user')
+        self.assertEqual(response.data['email'], 'new_user@test.com')
+
+    def test_get_profile_not_authenticated(self):
+        response = self.client.get('/api/auth/me/')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_update_profile_authenticated(self):
+        self.client.force_authenticate(user=self.user)
+
+        old_password_hashed = self.user.password
+        update_data = {
+            'username': 'update_username',
+            'email': 'update_email@mail.com',
+            'phone': '+380954127941',
+            'password': 'new_hack_pass123!@#',
+        }
+
+        response = self.client.patch('/api/auth/me/', update_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+
+        self.assertEqual(self.user.username, 'new_user')
+        self.assertEqual(self.user.email, 'update_email@mail.com')
+        self.assertEqual(self.user.phone, '+380954127941')
+        self.assertEqual(self.user.password, old_password_hashed)
+        self.assertTrue(self.user.check_password('Str0ng_Pas21swo..rd@!'))
+
+
+class UserLoginApiTest(APITestCase):
+    def setUp(self):
+        self.data = {
+            'username': 'ivan',
+            'password': 'Str0ng_Pas21swo..rd@!',
+        }
+        self.user = User.objects.create_user(**self.data)
+
+    def test_login_returns_token(self):
+        response = self.client.post('/api/auth/token/', self.data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('access', response.data)
+        self.assertIn('refresh', response.data)
+
+    def test_login_wrong_password(self):
+        data = {
+            'username': 'ivan',
+            'password': '123',
+        }
+        response = self.client.post('/api/auth/token/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
