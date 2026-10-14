@@ -1,8 +1,9 @@
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from .models import Product, Category, User
-from .serializers import ProductSerializer, CategorySerializer, RegisterSerializer
+from .serializers import ProductSerializer, CategorySerializer, RegisterSerializer, ProfileSerializer
 from rest_framework.generics import CreateAPIView
+from rest_framework.generics import RetrieveUpdateAPIView
 
 
 class ProductViewSet(ReadOnlyModelViewSet):
@@ -21,3 +22,11 @@ class CategoryViewSet(ReadOnlyModelViewSet):
 class RegisterView(CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
+
+
+class ProfileView(RetrieveUpdateAPIView):
+    serializer_class = ProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user

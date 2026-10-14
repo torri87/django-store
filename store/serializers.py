@@ -32,3 +32,10 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(list(error.messages))
 
         return value
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'address', 'phone']
+        extra_kwargs = {'username': {'read_only': True}, 'id': {'read_only': True}}
