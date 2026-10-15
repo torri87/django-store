@@ -15,5 +15,5 @@ urlpatterns = [
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('auth/register/', RegisterView.as_view(), name='register'),
     path('auth/me/', ProfileView.as_view(), name='me'),
-    path('order/', OrderView.as_view(), name='order'),
+    path('orders/', OrderView.as_view(), name='order'),
 ]

@@ -164,12 +164,12 @@ class OrderApiTest(APITestCase):
         self.user = User.objects.create_user(**self.data_user)
 
     def test_order_not_authenticated(self):
-        response = self.client.post('/api/order/', self.data, format='json')
+        response = self.client.post('/api/orders/', self.data, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_order_authenticated(self):
         self.client.force_authenticate(user=self.user)
-        response = self.client.post('/api/order/', self.data, format='json')
+        response = self.client.post('/api/orders/', self.data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_order_not_active(self):
@@ -179,7 +179,7 @@ class OrderApiTest(APITestCase):
             ]
         }
         self.client.force_authenticate(user=self.user)
-        response = self.client.post('/api/order/', data, format='json')
+        response = self.client.post('/api/orders/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_order_not_enough_stock(self):
@@ -189,7 +189,7 @@ class OrderApiTest(APITestCase):
             ]
         }
         self.client.force_authenticate(user=self.user)
-        response = self.client.post('/api/order/', data, format='json')
+        response = self.client.post('/api/orders/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_order_change_stock(self):
@@ -201,7 +201,7 @@ class OrderApiTest(APITestCase):
         }
         self.client.force_authenticate(user=self.user)
         before_stock = self.product1.stock
-        response = self.client.post('/api/order/', data, format='json')
+        response = self.client.post('/api/orders/', data, format='json')
         self.product1.refresh_from_db()
         after_stock = self.product1.stock
         self.assertNotEqual(after_stock, before_stock)
