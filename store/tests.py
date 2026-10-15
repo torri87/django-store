@@ -140,3 +140,68 @@ class UserLoginApiTest(APITestCase):
         }
         response = self.client.post('/api/auth/token/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+class OrderApiTest(APITestCase):
+    def setUp(self):
+        self.category = Category.objects.create(name='Electronics')
+        self.product1 = Product.objects.create(name="Laptop", price=1000.00, stock=10, category=self.category)
+        self.product2 = Product.objects.create(name="Mouse", price=50.00, stock=5, category=self.category)
+        self.product3 = Product.objects.create(name="Keyboard", price=75.00, stock=3, is_active=False, category=self.category)
+
+        self.data = {
+            "items": [
+                {"product": self.product1.id, "quantity": 2},
+                {"product": self.product2.id, "quantity": 2}
+            ]
+        }
+
+        self.data_user = {
+            'username': 'new_user',
+            'email': 'new_user@test.com',
+            'password': 'Str0ng_Pas21swo..rd@!',
+        }
+
+        self.user = User.objects.create_user(**self.data_user)
+
+    def test_order_not_authenticated(self):
+        response = self.client.post('/api/order/', self.data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_order_authenticated(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post('/api/order/', self.data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_order_not_active(self):
+        data = {
+            'items': [
+                {"product": self.product3.id, "quantity": 2},
+            ]
+        }
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post('/api/order/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_order_not_enough_stock(self):
+        data = {
+            'items': [
+                {"product": self.product1.id, "quantity": 11},
+            ]
+        }
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post('/api/order/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_order_change_stock(self):
+        data = {
+            'items': [
+                {'product': self.product1.id,
+                'quantity': 2}
+            ]
+        }
+        self.client.force_authenticate(user=self.user)
+        before_stock = self.product1.stock
+        response = self.client.post('/api/order/', data, format='json')
+        self.product1.refresh_from_db()
+        after_stock = self.product1.stock
+        self.assertNotEqual(after_stock, before_stock)
