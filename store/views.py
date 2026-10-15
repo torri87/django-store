@@ -1,7 +1,7 @@
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from .models import Product, Category, User
-from .serializers import ProductSerializer, CategorySerializer, RegisterSerializer, ProfileSerializer
+from .serializers import ProductSerializer, CategorySerializer, RegisterSerializer, ProfileSerializer, OrderSerializer
 from rest_framework.generics import CreateAPIView
 from rest_framework.generics import RetrieveUpdateAPIView
 
@@ -30,3 +30,8 @@ class ProfileView(RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class OrderView(CreateAPIView):
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated]
