@@ -84,7 +84,7 @@ class OrderSerializer(serializers.ModelSerializer):
                 quantity = item['quantity']
 
                 if product.stock < quantity:
-                    raise serializers.ValidationError("В наявності недостатньо товару")
+                    raise serializers.ValidationError(f"В наявності недостатньо {product.name}: на складі {product.stock}")
 
                 product.stock -= quantity
                 product.save()
@@ -96,7 +96,7 @@ class OrderSerializer(serializers.ModelSerializer):
     def validate_items(self, value):
         ids = []
         for item in value:
-            ids.append(item['product'])
+            ids.append(item['product'].id)
 
         unique_ids = set(ids)
 
