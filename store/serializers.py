@@ -73,13 +73,13 @@ class OrderSerializer(serializers.ModelSerializer):
         return total
 
     def create(self, validated_data):
-        data = validated_data.pop('items')
+        items_data = validated_data.pop('items')
         user = self.context['request'].user
 
         with transaction.atomic():
             order = Order.objects.create(user=user)
 
-            for item in data:
+            for item in items_data:
                 product = item['product']
                 quantity = item['quantity']
 
@@ -89,6 +89,18 @@ class OrderSerializer(serializers.ModelSerializer):
                 product.stock -= quantity
                 product.save()
 
-                OrderItem.objects.create(order = order, product=product, quantity=quantity, price=product.price)
+                OrderItem.objects.create(order=order, product=product, quantity=quantity, price=product.price)
 
         return order
+
+    def validate_items(self, value):
+        ids = []
+        for item in value:
+            ids.append(item['product'])
+
+        unique_ids = set(ids)
+
+        if len(ids) != len(unique_ids):
+            raise serializers.ValidationError("Один і той ж товар вказано декілька разів.")
+
+        return value
