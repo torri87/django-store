@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ProductViewSet, CategoryViewSet, RegisterView, ProfileView
+from .views import ProductViewSet, CategoryViewSet, RegisterView, ProfileView, OrderViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 
@@ -8,6 +8,7 @@ router = DefaultRouter()
 
 router.register(r'products', ProductViewSet)
 router.register(r'categories', CategoryViewSet)
+router.register(r'orders', OrderViewSet, basename='order')
 
 urlpatterns = [
     path('', include(router.urls)),
