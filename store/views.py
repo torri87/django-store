@@ -5,11 +5,13 @@ from .models import Product, Category, Order
 from .serializers import ProductSerializer, CategorySerializer, RegisterSerializer, ProfileSerializer, OrderSerializer
 from rest_framework.generics import CreateAPIView
 from rest_framework.generics import RetrieveUpdateAPIView
+from .pagination import ProductPagination
 
 
 class ProductViewSet(ReadOnlyModelViewSet):
     queryset = Product.objects.filter(is_active=True)
     serializer_class = ProductSerializer
+    pagination_class = ProductPagination
     filterset_fields = ['category']
     search_fields = ['name']
     ordering_fields = ['price', 'time_created']
