@@ -19,7 +19,10 @@ class ProductApiTest(APITestCase):
 
     def test_hidden_product_not_in_list(self):
         response = self.client.get('/api/products/')
-        names = [item['name'] for item in response.data]
+        names = [
+            item['name']
+            for item in response.data['results']
+        ]
         self.assertIn('Футболка', names)
         self.assertNotIn('Прихований', names)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
