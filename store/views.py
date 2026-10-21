@@ -6,6 +6,11 @@ from .serializers import ProductSerializer, CategorySerializer, RegisterSerializ
 from rest_framework.generics import CreateAPIView
 from rest_framework.generics import RetrieveUpdateAPIView
 from .pagination import ProductPagination
+from django.http import JsonResponse
+
+
+def health_check(request):
+    return JsonResponse({'status': 'ok'})
 
 
 class ProductViewSet(ReadOnlyModelViewSet):
