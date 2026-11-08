@@ -1,20 +1,21 @@
 from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, ListModelMixin
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.viewsets import ReadOnlyModelViewSet, GenericViewSet
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from .models import Product, Category, Order
 from .serializers import ProductSerializer, CategorySerializer, RegisterSerializer, ProfileSerializer, OrderSerializer
-from rest_framework.generics import CreateAPIView
-from rest_framework.generics import RetrieveUpdateAPIView
+from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView
 from .pagination import ProductPagination
 from django.http import JsonResponse
+from .permissions import IsAdminReadOnly
 
 
 def health_check(request):
     return JsonResponse({'status': 'ok'})
 
 
-class ProductViewSet(ReadOnlyModelViewSet):
+class ProductViewSet(ModelViewSet):
     queryset = Product.objects.filter(is_active=True)
+    permission_classes = [IsAdminReadOnly]
     serializer_class = ProductSerializer
     pagination_class = ProductPagination
     filterset_fields = ['category']
@@ -22,8 +23,9 @@ class ProductViewSet(ReadOnlyModelViewSet):
     ordering_fields = ['price', 'time_created']
 
 
-class CategoryViewSet(ReadOnlyModelViewSet):
+class CategoryViewSet(ModelViewSet):
     queryset = Category.objects.all()
+    permission_classes = [IsAdminReadOnly]
     serializer_class = CategorySerializer
 
 
