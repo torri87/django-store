@@ -80,7 +80,7 @@ class OrderSerializer(serializers.ModelSerializer):
             order = Order.objects.create(user=user)
 
             for item in items_data:
-                product = item['product']
+                product = Product.objects.select_for_update().get(id=item['product'].id)
                 quantity = item['quantity']
 
                 if product.stock < quantity:
