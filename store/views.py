@@ -7,6 +7,13 @@ from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView
 from .pagination import ProductPagination
 from django.http import JsonResponse
 from .permissions import IsAdminReadOnly
+from rest_framework.throttling import ScopedRateThrottle
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+
+class LoginView(TokenObtainPairView):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'login'
 
 
 def health_check(request):
@@ -32,6 +39,8 @@ class CategoryViewSet(ModelViewSet):
 class RegisterView(CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'register'
 
 
 class ProfileView(RetrieveUpdateAPIView):
