@@ -19,12 +19,14 @@ from django.urls import path, include
 from django.views.generic import RedirectView
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from store.views import ChangePasswordViewSet
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/api/docs/', permanent=False), name='api'),
     path('admin/', admin.site.urls),
     path('api/', include('store.urls')),
 
+    path('api/auth/change-password/', ChangePasswordViewSet.as_view({'put': 'update'}), name='change-password'),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),

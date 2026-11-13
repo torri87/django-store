@@ -118,3 +118,24 @@ class FavoriteSerializer(serializers.ModelSerializer):
         if already_favorite:
             raise serializers.ValidationError("Цей Товар уже є в обраному.")
         return value
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if user.check_password(value):
+            return value
+        raise serializers.ValidationError("Не вірний пароль")
+
+    def validate(self, data):
+        if data['new_password'] == data['old_password']:
+            raise serializers.ValidationError("Паролі збігаються")
+        return data
+
+    def update(self, instance, validated_data):
+        instance.set_password(validated_data['new_password'])
+        instance.save()
+        return instance
