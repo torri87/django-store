@@ -24,13 +24,17 @@ def health_check(request):
 
 
 class ProductViewSet(ModelViewSet):
-    queryset = Product.objects.filter(is_active=True)
     permission_classes = [IsAdminReadOnly]
     serializer_class = ProductSerializer
     pagination_class = ProductPagination
     filterset_fields = ['category']
     search_fields = ['name']
     ordering_fields = ['price', 'time_created']
+
+    def get_queryset(self):
+        if self.request.user.is_staff:
+            return Product.objects.all()
+        return Product.objects.filter(is_active=True)
 
 
 class CategoryViewSet(ModelViewSet):
