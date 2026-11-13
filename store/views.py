@@ -1,8 +1,10 @@
-from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, ListModelMixin
+from rest_framework.decorators import action
+from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, ListModelMixin, DestroyModelMixin
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
-from .models import Product, Category, Order
-from .serializers import ProductSerializer, CategorySerializer, RegisterSerializer, ProfileSerializer, OrderSerializer
+from .models import Product, Category, Order, Favorite
+from .serializers import ProductSerializer, CategorySerializer, RegisterSerializer, ProfileSerializer, OrderSerializer, \
+    FavoriteSerializer
 from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView
 from .pagination import ProductPagination
 from django.http import JsonResponse
@@ -57,3 +59,14 @@ class OrderViewSet(CreateModelMixin, ListModelMixin, RetrieveModelMixin, Generic
 
     def get_queryset(self):
         return Order.objects.filter(user=self.request.user).prefetch_related('items__product')
+
+
+class FavoriteViewSet(CreateModelMixin, ListModelMixin, DestroyModelMixin, GenericViewSet):
+    serializer_class = FavoriteSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Favorite.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)

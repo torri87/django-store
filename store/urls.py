@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ProductViewSet, CategoryViewSet, RegisterView, ProfileView, OrderViewSet, health_check, LoginView
+from .views import ProductViewSet, CategoryViewSet, RegisterView, ProfileView, OrderViewSet, health_check, LoginView, FavoriteViewSet
 from rest_framework_simplejwt.views import TokenRefreshView
 
 
@@ -9,6 +9,7 @@ router = DefaultRouter()
 router.register(r'products', ProductViewSet)
 router.register(r'categories', CategoryViewSet)
 router.register(r'orders', OrderViewSet, basename='order')
+router.register(r'favorites', FavoriteViewSet, basename='favorite')
 
 urlpatterns = [
     path('health/', health_check, name='health_check'),

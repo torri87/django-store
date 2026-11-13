@@ -1,6 +1,6 @@
 from django.db import transaction
 from rest_framework import serializers
-from .models import Product, Category, User, OrderItem, Order
+from .models import Product, Category, User, OrderItem, Order, Favorite
 from django.contrib.auth.password_validation import validate_password as check_password
 from django.core.exceptions import ValidationError
 
@@ -103,4 +103,18 @@ class OrderSerializer(serializers.ModelSerializer):
         if len(ids) != len(unique_ids):
             raise serializers.ValidationError("Один і той ж товар вказано декілька разів.")
 
+        return value
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Favorite
+        fields = ['id', 'product', 'time_created']
+        read_only_fields = ['id', 'time_created']
+
+    def validate_product(self, value):
+        user = self.context['request'].user
+        already_favorite = Favorite.objects.filter(user=user, product=value).exists()
+        if already_favorite:
+            raise serializers.ValidationError("Цей Товар уже є в обраному.")
         return value
