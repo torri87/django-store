@@ -1,0 +1,1002 @@
+openapi: 3.0.3
+
+info:
+  title: Online Store API
+  version: 1.0.0
+  description: |
+    REST API інтернет-магазину: каталог товарів, авторизація за JWT, профіль користувача та замовлення.
+
+    **Автентифікація.** Захищені ендпоїнти потребують заголовок `Authorization: Bearer <access-токен>`.
+    Токени видає `POST /auth/token/`.
+
+    **Права доступу.** Каталог (товари та категорії) доступний для читання всім.
+    Створювати, змінювати та видаляти товари й категорії може лише адміністратор.
+    Профіль і замовлення доступні лише авторизованому користувачу, і він бачить лише свої дані.
+
+    **Кореляція.** Кожна відповідь містить заголовок `X-Request-Id` з унікальним ідентифікатором запиту.
+
+    **Формат помилок.** Використовується стандартний формат Django REST Framework:
+    `{"detail": "..."}` для 401, 403, 404, 405 та об'єкт або масив повідомлень для 400.
+
+servers:
+  - url: http://127.0.0.1:8000/api
+    description: Локальний сервер розробки
+
+tags:
+  - name: Catalog
+    description: Товари та категорії
+  - name: Auth
+    description: Реєстрація та токени
+  - name: Profile
+    description: Профіль поточного користувача
+  - name: Orders
+    description: Замовлення поточного користувача
+
+security: []
+
+paths:
+  /products/:
+    get:
+      tags: [Catalog]
+      operationId: listProducts
+      summary: Список активних товарів
+      description: Повертає лише активні товари (`is_active = true`). Підтримує фільтр, пошук, сортування та пагінацію.
+      parameters:
+        - name: category
+          in: query
+          description: Фільтр за ідентифікатором категорії
+          schema:
+            type: integer
+        - name: search
+          in: query
+          description: Пошук за назвою товару (без урахування регістру)
+          schema:
+            type: string
+        - name: ordering
+          in: query
+          description: Сортування. Мінус перед назвою означає сортування за спаданням.
+          schema:
+            type: string
+            enum: [price, -price, time_created, -time_created]
+        - name: page
+          in: query
+          description: Номер сторінки
+          schema:
+            type: integer
+            minimum: 1
+        - name: page_size
+          in: query
+          description: Кількість товарів на сторінці
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Сторінка зі списком товарів
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductList'
+        '404':
+          description: Сторінки з таким номером не існує
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+    post:
+      tags: [Catalog]
+      operationId: createProduct
+      summary: Створити товар (адміністратор)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+      responses:
+        '201':
+          description: Товар створено
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /products/{id}/:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags: [Catalog]
+      operationId: retrieveProduct
+      summary: Один товар
+      description: Прихований товар (`is_active = false`) звичайним користувачам недоступний (404).
+      responses:
+        '200':
+          description: Товар
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Catalog]
+      operationId: updateProduct
+      summary: Повністю оновити товар (адміністратор)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+      responses:
+        '200':
+          description: Товар оновлено
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Catalog]
+      operationId: partialUpdateProduct
+      summary: Частково оновити товар (адміністратор)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductPatch'
+      responses:
+        '200':
+          description: Товар оновлено
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Catalog]
+      operationId: deleteProduct
+      summary: Видалити товар (адміністратор)
+      description: Товар, який є в замовленнях, видалити не можна. Замість цього його ховають (`is_active = false`).
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Товар видалено
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /categories/:
+    get:
+      tags: [Catalog]
+      operationId: listCategories
+      summary: Список категорій
+      description: Категорії відсортовані за назвою.
+      responses:
+        '200':
+          description: Список категорій
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+    post:
+      tags: [Catalog]
+      operationId: createCategory
+      summary: Створити категорію (адміністратор)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+      responses:
+        '201':
+          description: Категорію створено
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /categories/{id}/:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags: [Catalog]
+      operationId: retrieveCategory
+      summary: Одна категорія
+      responses:
+        '200':
+          description: Категорія
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Catalog]
+      operationId: updateCategory
+      summary: Повністю оновити категорію (адміністратор)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+      responses:
+        '200':
+          description: Категорію оновлено
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Catalog]
+      operationId: partialUpdateCategory
+      summary: Частково оновити категорію (адміністратор)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryPatch'
+      responses:
+        '200':
+          description: Категорію оновлено
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Catalog]
+      operationId: deleteCategory
+      summary: Видалити категорію (адміністратор)
+      description: Категорію, у якій є товари, видалити не можна.
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Категорію видалено
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /auth/register/:
+    post:
+      tags: [Auth]
+      operationId: registerUser
+      summary: Реєстрація користувача
+      description: Пароль перевіряється валідаторами Django. Логін і email мають бути унікальними.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Користувача створено
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/token/:
+    post:
+      tags: [Auth]
+      operationId: obtainToken
+      summary: Вхід, отримання пари токенів
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainRequest'
+      responses:
+        '200':
+          description: Токени доступу
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Невірний логін або пароль
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+              example:
+                detail: No active account found with the given credentials
+
+  /auth/token/refresh/:
+    post:
+      tags: [Auth]
+      operationId: refreshToken
+      summary: Оновлення access-токена
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+      responses:
+        '200':
+          description: Новий access-токен
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefreshResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Refresh-токен недійсний або протермінований
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+
+  /auth/me/:
+    get:
+      tags: [Profile]
+      operationId: getProfile
+      summary: Мій профіль
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Профіль поточного користувача
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    put:
+      tags: [Profile]
+      operationId: updateProfile
+      summary: Повністю оновити профіль
+      description: Поля `id` і `username` змінити не можна, вони ігноруються.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Profile'
+      responses:
+        '200':
+          description: Профіль оновлено
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    patch:
+      tags: [Profile]
+      operationId: partialUpdateProfile
+      summary: Частково оновити профіль
+      description: Поля `id` і `username` змінити не можна, вони ігноруються.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfilePatch'
+      responses:
+        '200':
+          description: Профіль оновлено
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /orders/:
+    get:
+      tags: [Orders]
+      operationId: listOrders
+      summary: Мої замовлення
+      description: Повертає лише замовлення поточного користувача, від нових до старих.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Список замовлень
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [Orders]
+      operationId: createOrder
+      summary: Створити замовлення
+      description: |
+        Ціну позицій, статус (`PENDING`) і власника замовлення визначає сервер, значення від клієнта ігноруються.
+        Залишки товарів перевіряються й зменшуються в одній транзакції: якщо хоча б одного товару не вистачає,
+        замовлення не створюється. Один товар можна вказати в замовленні лише один раз.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreate'
+      responses:
+        '201':
+          description: Замовлення створено
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /orders/{id}/:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags: [Orders]
+      operationId: retrieveOrder
+      summary: Одне моє замовлення
+      description: Чуже замовлення недоступне, у відповідь повертається 404.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Замовлення
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access-токен, отриманий через `POST /auth/token/`.
+
+  headers:
+    XRequestId:
+      description: Унікальний ідентифікатор запиту
+      schema:
+        type: string
+        format: uuid
+        example: 3f2b8c1e-6a4d-4c1f-9e7a-2b5d8f0c1a34
+
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      description: Ідентифікатор об'єкта
+      schema:
+        type: integer
+
+  responses:
+    BadRequest:
+      description: Некоректні дані запиту
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+          examples:
+            fieldErrors:
+              summary: Помилки по полях
+              value:
+                price:
+                  - Ensure this value is greater than or equal to 0.
+            duplicateItem:
+              summary: Той самий товар вказано двічі
+              value:
+                items:
+                  - Один і той ж товар вказано декілька разів.
+            notEnoughStock:
+              summary: Недостатньо товару на складі
+              value:
+                - 'Недостатньо товару "Футболка": на складі 3'
+    Unauthorized:
+      description: Потрібна автентифікація (немає токена, він недійсний або протермінований)
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorDetail'
+          example:
+            detail: Authentication credentials were not provided.
+    Forbidden:
+      description: Недостатньо прав (потрібен адміністратор)
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorDetail'
+          example:
+            detail: You do not have permission to perform this action.
+    NotFound:
+      description: Об'єкт не знайдено
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorDetail'
+          example:
+            detail: Not found.
+
+  schemas:
+    ErrorDetail:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+
+    ValidationError:
+      description: |
+        Помилки валідації. Зазвичай це об'єкт, де ключ це назва поля, а значення це список повідомлень
+        (для вкладених позицій замовлення список об'єктів з такою ж структурою).
+        Помилки, що стосуються всієї дії (наприклад, недостатній залишок), повертаються масивом повідомлень.
+      oneOf:
+        - type: object
+          additionalProperties: true
+        - type: array
+          items:
+            type: string
+
+    Decimal:
+      type: string
+      description: Десяткове число, передане рядком
+      pattern: '^\d{1,8}(\.\d{1,2})?$'
+      example: '499.00'
+
+    Category:
+      type: object
+      required: [name]
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+          description: Унікальна назва категорії
+          example: Одяг
+        description:
+          type: string
+          maxLength: 255
+          example: Футболки, светри та куртки
+
+    CategoryPatch:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 255
+
+    Product:
+      type: object
+      required: [category, name, price]
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        category:
+          type: integer
+          description: Ідентифікатор категорії
+          example: 1
+        name:
+          type: string
+          maxLength: 255
+          example: Футболка біла
+        description:
+          type: string
+          example: Бавовняна футболка класичного крою
+        price:
+          $ref: '#/components/schemas/Decimal'
+        stock:
+          type: integer
+          minimum: 0
+          description: Залишок на складі
+          example: 25
+        is_active:
+          type: boolean
+          description: Чи показується товар у каталозі
+          default: true
+        time_created:
+          type: string
+          format: date-time
+          readOnly: true
+
+    ProductPatch:
+      type: object
+      properties:
+        category:
+          type: integer
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        price:
+          $ref: '#/components/schemas/Decimal'
+        stock:
+          type: integer
+          minimum: 0
+        is_active:
+          type: boolean
+
+    PaginatedProductList:
+      type: object
+      required: [count, results]
+      properties:
+        count:
+          type: integer
+          description: Загальна кількість товарів з урахуванням фільтрів
+          example: 53
+        next:
+          type: string
+          format: uri
+          nullable: true
+          description: Посилання на наступну сторінку
+        previous:
+          type: string
+          format: uri
+          nullable: true
+          description: Посилання на попередню сторінку
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+
+    RegisterRequest:
+      type: object
+      required: [username, email, password]
+      properties:
+        username:
+          type: string
+          maxLength: 150
+          example: ivan_petrenko
+        email:
+          type: string
+          format: email
+          example: ivan@example.com
+        password:
+          type: string
+          format: password
+          writeOnly: true
+
+    RegisterResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+
+    TokenObtainRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+
+    TokenPair:
+      type: object
+      required: [access, refresh]
+      properties:
+        access:
+          type: string
+          description: Короткоживучий токен для запитів
+        refresh:
+          type: string
+          description: Довгоживучий токен для оновлення access
+
+    TokenRefreshRequest:
+      type: object
+      required: [refresh]
+      properties:
+        refresh:
+          type: string
+
+    TokenRefreshResponse:
+      type: object
+      required: [access]
+      properties:
+        access:
+          type: string
+
+    Profile:
+      type: object
+      required: [email]
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        address:
+          type: string
+          maxLength: 255
+        phone:
+          type: string
+          maxLength: 20
+
+    ProfilePatch:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        address:
+          type: string
+          maxLength: 255
+        phone:
+          type: string
+          maxLength: 20
+
+    OrderStatus:
+      type: string
+      description: Статус замовлення. Змінюється лише адміністратором.
+      enum: [PENDING, PAID, SHIPPED, DELIVERED]
+      example: PENDING
+
+    OrderItem:
+      type: object
+      properties:
+        product:
+          type: integer
+          description: Ідентифікатор товару
+        quantity:
+          type: integer
+          minimum: 1
+        price:
+          allOf:
+            - $ref: '#/components/schemas/Decimal'
+          description: Ціна одиниці товару, зафіксована на момент замовлення
+          readOnly: true
+
+    OrderItemCreate:
+      type: object
+      required: [product, quantity]
+      properties:
+        product:
+          type: integer
+          description: Ідентифікатор активного товару
+          example: 1
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+
+    OrderCreate:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          description: Позиції замовлення (товари не повторюються)
+          items:
+            $ref: '#/components/schemas/OrderItemCreate'
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        time_created:
+          type: string
+          format: date-time
+          readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        total:
+          type: string
+          description: Сума замовлення (ціна позицій помножена на кількість)
+          readOnly: true
+          example: '2597.00'
