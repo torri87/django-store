@@ -1,10 +1,11 @@
 from rest_framework.decorators import action
-from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, ListModelMixin, DestroyModelMixin
+from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, ListModelMixin, DestroyModelMixin, \
+    UpdateModelMixin
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from .models import Product, Category, Order, Favorite
 from .serializers import ProductSerializer, CategorySerializer, RegisterSerializer, ProfileSerializer, OrderSerializer, \
-    FavoriteSerializer
+    FavoriteSerializer, ChangePasswordSerializer
 from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView
 from .pagination import ProductPagination
 from django.http import JsonResponse
@@ -70,3 +71,11 @@ class FavoriteViewSet(CreateModelMixin, ListModelMixin, DestroyModelMixin, Gener
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+
+class ChangePasswordViewSet(UpdateModelMixin, GenericViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ChangePasswordSerializer
+
+    def get_object(self):
+        return self.request.user
