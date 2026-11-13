@@ -23,61 +23,26 @@ REST API інтернет-магазину на Django та Django REST Framewor
 - Автоматична документація API (Swagger)
 - Автотести каталогу, авторизації та замовлень
 
-## Запуск локально
+## Запуск через Docker
 
-### 1. Клонування репозиторію
-
-```bash
-git clone <URL-репозиторію>
-cd <папка-проєкту>
-```
-
-### 2. Віртуальне оточення
+Потірбен встановлений Docker Desktop.
 
 ```bash
-python -m venv .venv
+cp .env.example .env        # Windows PowerShell: Copy-Item .env.example .env
+docker compose up --build
 ```
 
-Активація:
-
-```powershell
-# Windows (PowerShell)
-.venv\Scripts\Activate.ps1
-```
+В іншому терміналі:
 
 ```bash
-# Linux / macOS
-source .venv/bin/activate
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py createsuperuser
 ```
 
-### 3. Залежності
+Swagger: http://localhost:8000/api/docs/
 
-```bash
-pip install -r requirements.txt
-```
-
-### 4. База даних
-
-Створіть порожню базу даних у PostgreSQL (наприклад, `store_db`) через `psql` або pgAdmin.
-
-### 5. Змінні оточення
-
-Скопіюйте `.env.example` у `.env` і заповніть значення: секретний ключ Django та параметри підключення до PostgreSQL (назва бази, користувач, пароль, хост, порт). Файл `.env` не потрапляє в репозиторій.
-
-### 6. Міграції та суперкористувач
-
-```bash
-python manage.py migrate
-python manage.py createsuperuser
-```
-
-### 7. Запуск сервера
-
-```bash
-python manage.py runserver
-```
-
-API буде доступне за адресою `http://127.0.0.1:8000/api/`, адмінка за `http://127.0.0.1:8000/admin/`.
+Зупинити: `docker compose down` (Дані зберігаються).
+Зупинити і стерти дані: `docker compose down -v`.
 
 ## Документація API
 
