@@ -1,8 +1,9 @@
-from django.db import transaction
-from rest_framework import serializers
-from .models import Product, Category, User, OrderItem, Order, Favorite
 from django.contrib.auth.password_validation import validate_password as check_password
 from django.core.exceptions import ValidationError
+from django.db import transaction
+from rest_framework import serializers
+
+from .models import Category, Favorite, Order, OrderItem, Product, User
 
 
 class ProductSerializer(serializers.ModelSerializer):

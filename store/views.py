@@ -1,17 +1,29 @@
-from rest_framework.decorators import action
-from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, ListModelMixin, DestroyModelMixin, \
-    UpdateModelMixin
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.viewsets import ModelViewSet, GenericViewSet
-from .models import Product, Category, Order, Favorite
-from .serializers import ProductSerializer, CategorySerializer, RegisterSerializer, ProfileSerializer, OrderSerializer, \
-    FavoriteSerializer, ChangePasswordSerializer
-from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView
-from .pagination import ProductPagination
 from django.http import JsonResponse
-from .permissions import IsAdminReadOnly
+from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView
+from rest_framework.mixins import (
+    CreateModelMixin,
+    DestroyModelMixin,
+    ListModelMixin,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+)
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView
+
+from .models import Category, Favorite, Order, Product
+from .pagination import ProductPagination
+from .permissions import IsAdminReadOnly
+from .serializers import (
+    CategorySerializer,
+    ChangePasswordSerializer,
+    FavoriteSerializer,
+    OrderSerializer,
+    ProductSerializer,
+    ProfileSerializer,
+    RegisterSerializer,
+)
 
 
 class LoginView(TokenObtainPairView):

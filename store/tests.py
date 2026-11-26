@@ -1,5 +1,6 @@
 from rest_framework import status
 from rest_framework.test import APITestCase
+
 from .models import Category, Product, User
 
 
@@ -204,7 +205,7 @@ class OrderApiTest(APITestCase):
         }
         self.client.force_authenticate(user=self.user)
         before_stock = self.product1.stock
-        response = self.client.post('/api/orders/', data, format='json')
+        self.client.post('/api/orders/', data, format='json')
         self.product1.refresh_from_db()
         after_stock = self.product1.stock
         self.assertNotEqual(after_stock, before_stock)

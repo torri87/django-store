@@ -1,13 +1,22 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from .views import ProductViewSet, CategoryViewSet, RegisterView, ProfileView, OrderViewSet, health_check, LoginView, FavoriteViewSet
 from rest_framework_simplejwt.views import TokenRefreshView
 
+from .views import (
+    CategoryViewSet,
+    FavoriteViewSet,
+    LoginView,
+    OrderViewSet,
+    ProductViewSet,
+    ProfileView,
+    RegisterView,
+    health_check,
+)
 
 router = DefaultRouter()
 
-router.register(r'products', ProductViewSet)
-router.register(r'categories', CategoryViewSet)
+router.register(r'products', ProductViewSet, basename='products')
+router.register(r'categories', CategoryViewSet, basename='categories')
 router.register(r'orders', OrderViewSet, basename='order')
 router.register(r'favorites', FavoriteViewSet, basename='favorite')
 
